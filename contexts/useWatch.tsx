@@ -97,7 +97,6 @@ export const WatchContextApp = ({children}: {children: ReactElement}): ReactElem
 				}
 				return value;
 			});
-			
 
 			getVaultIsRunning.current = false;
 			if (getVaultRunNonce.current === currentNonce) {
@@ -143,39 +142,41 @@ export const WatchContextApp = ({children}: {children: ReactElement}): ReactElem
 	}
 
 	async function fetchVaultsByChain(): Promise<void> {
-		const dataByChain = [{vaults: [...vaults], chainId: dataChainID, name: ''}];
-		for (const chain of options){
-			if(chain.value === dataChainID){
-				dataByChain[0]['name'] = chain.label;
-				continue;
-			}
-			try{
-				if (shouldUseRemoteFetch) {
-					const	{data} = await axios.get(`/api/getVaults?chainID=${chain.value}&revalidate=false`);
-					dataByChain.push({vaults: data.data.vaults, chainId: chain.value, name: chain.label})
-				} else {
-					const	data = await getVaults(
-						chain.value,
-						true,
-						shouldGivePriorityToSubgraph,
-						shouldDisplayWithNoDebt,
-						shouldFetchStratsFromVault,
-						rpcURI[chain.value],
-						subGraphURI[chain.value]
-					);
-					const	_vaults = JSON.parse(JSON.stringify(data.vaults), (_key: unknown, value: {type: string}): unknown => {
-						if (value?.type === 'BigNumber') {
-							return format.BN(value as never);
-						}
-						return value;
-					});
-					dataByChain.push({vaults: _vaults, chainId: chain.value, name: chain.label})
+		if(!dataByChain.length){
+			const chainData = [{vaults: [...vaults], chainId: dataChainID, name: ''}];
+			for (const chain of options){
+				if(chain.value === dataChainID){
+					chainData[0]['name'] = chain.label;
+					continue;
 				}
-			} catch (e) {
-				console.log("Can't get info on this chain", e);
+				try{
+					if (shouldUseRemoteFetch) {
+						const	{data} = await axios.get(`/api/getVaults?chainID=${chain.value}&revalidate=false`);
+						chainData.push({vaults: data.data.vaults, chainId: chain.value, name: chain.label})
+					} else {
+						const	data = await getVaults(
+							chain.value,
+							true,
+							shouldGivePriorityToSubgraph,
+							shouldDisplayWithNoDebt,
+							shouldFetchStratsFromVault,
+							rpcURI[chain.value],
+							subGraphURI[chain.value]
+						);
+						const	_vaults = JSON.parse(JSON.stringify(data.vaults), (_key: unknown, value: {type: string}): unknown => {
+							if (value?.type === 'BigNumber') {
+								return format.BN(value as never);
+							}
+							return value;
+						});
+						chainData.push({vaults: _vaults, chainId: chain.value, name: chain.label})
+					}
+				} catch (e) {
+					console.log(`Can't get info on ${chain.label} chain`, e);
+				}
 			}
+			set_dataByChain(chainData);
 		}
-		set_dataByChain(dataByChain);
 	}
 
 	React.useEffect((): void => {

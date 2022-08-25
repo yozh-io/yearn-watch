@@ -18,8 +18,6 @@ function	NetworkSelector({selectedChain, chainList, set_chain}:
 									set_chain: React.Dispatch<React.SetStateAction<string>>
 								}):
 	ReactElement {
-	console.log('gotselectedChain', selectedChain);
-	console.log('gotchains', chainList);
 	return (
 			<div className='min-w-32 col-span-8 gap-4 flex flex-row items-center'>
 				{chainList?.map((chain, index)=>(
@@ -84,12 +82,10 @@ function	Allocations(): ReactElement {
 
 
 	React.useEffect((): void => {
-		console.log('dataByChain1', dataByChain);
 		if (dataChainID !== chainID || dataByChain === []) {
 			set_protocols(initProtocolState);
 			return;
 		}
-		console.log('dataByChain', dataByChain);
 		const protocols = {};
 		protocols['All'] = {
 			tvlTotal: 0,
@@ -101,31 +97,36 @@ function	Allocations(): ReactElement {
 				tvlTotal: 0,
 				list: {}
 			};
-			console.log('chainData', chainData);
 			chainData.vaults.forEach((vault)=>{
 				vault.strategies.forEach((strategy)=> {
 					if (strategy.protocols) {
 					strategy.protocols.forEach((protocol) => {
 						if (!protocols[chainData.name]['list'][protocol]) {
 							protocols[chainData.name]['list'][protocol] = {
-								strategiesAmount: 0,
+								strategiesTVL: {},
 								tvl: 0,
 								name: protocol,
 							};
 						}
 						protocols[chainData.name]['list'][protocol].tvl += strategy.totalDebtUSDC;
-						protocols[chainData.name]['list'][protocol].strategiesAmount +=1;
+						if(!protocols[chainData.name]['list'][protocol].strategiesTVL[strategy.name]){
+							protocols[chainData.name]['list'][protocol].strategiesTVL[strategy.name] = 0
+						}
+						protocols[chainData.name]['list'][protocol].strategiesTVL[strategy.name] += strategy.totalDebtUSDC;
 						protocols[chainData.name]['tvlTotal'] += strategy.totalDebtUSDC;
 
 						if (!protocols['All']['list'][protocol]) {
 							protocols['All']['list'][protocol] = {
-								strategiesAmount: 0,
+								strategiesTVL: {},
 								tvl: 0,
 								name: protocol,
 							};
 						}
 						protocols['All']['list'][protocol].tvl += strategy.totalDebtUSDC;
-						protocols['All']['list'][protocol].strategiesAmount +=1;
+						if(!protocols['All']['list'][protocol].strategiesTVL[strategy.name]){
+							protocols['All']['list'][protocol].strategiesTVL[strategy.name] = 0
+						}
+						protocols['All']['list'][protocol].strategiesTVL[strategy.name] += strategy.totalDebtUSDC;
 						protocols['All']['tvlTotal'] += strategy.totalDebtUSDC;
 					})
 					}
@@ -137,6 +138,7 @@ function	Allocations(): ReactElement {
 		Object.keys(protocols).forEach((networkName)=>{
 			if(protocols[networkName]['list']) {
 				Object.keys(protocols[networkName]['list']).forEach((protocol) => {
+					protocols[networkName]['list'][protocol].strategiesAmount = Object.keys(protocols[networkName]['list'][protocol].strategiesTVL).length
 					protocols[networkName]['list'][protocol]['totalDebtRatio'] =
 						protocols[networkName]['list'][protocol].tvl /
 						protocols[networkName]['tvlTotal'] * 100
@@ -144,8 +146,6 @@ function	Allocations(): ReactElement {
 			}
 		})
 		set_protocols(protocols);
-		console.log('protocols', protocols);
-		console.log('Object.keys(protocols)', Object.keys(protocols));
 	}, [dataByChain]);
 
 	/* 🔵 - Yearn Finance ******************************************************

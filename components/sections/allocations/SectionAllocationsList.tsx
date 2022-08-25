@@ -1,7 +1,9 @@
-import	React, {ReactElement}	from	'react';
-import	{List}								from	'@yearn-finance/web-lib/layouts';
+import	React, {ReactElement}	    from	'react';
+import	{List}						from	'@yearn-finance/web-lib/layouts';
 import	{Card}						from	'@yearn-finance/web-lib/components';
-import	* as utils							from	'@yearn-finance/web-lib/utils';
+import	* as utils					from	'@yearn-finance/web-lib/utils';
+import	{Chevron}					from	'@yearn-finance/web-lib/icons';
+import {format} from "@yearn-finance/web-lib/utils";
 
 const	ProtocolBox = React.memo(function ProtocolBox({protocol}: {protocol: any}): ReactElement {
 	function	renderSummary(p: {open: boolean}): ReactElement {
@@ -12,9 +14,6 @@ const	ProtocolBox = React.memo(function ProtocolBox({protocol}: {protocol: any})
 						<div className={'flex-row-center'}>
 							<div>
 								<b>{protocol.name}</b>
-								<p className={'text-xs text-neutral-500'}>
-									{protocol.strategiesAmount > 1 ? `${protocol.strategiesAmount} strats` : `${protocol.strategiesAmount} strat`}
-								</p>
 							</div>
 						</div>
 					</div>
@@ -30,44 +29,41 @@ const	ProtocolBox = React.memo(function ProtocolBox({protocol}: {protocol: any})
 						{protocol.strategiesAmount}
 					</div>
 				</div>
-				{/*<div className={'min-w-36 cell-end col-span-4 flex flex-row items-center'}>*/}
-				{/*	<Link passHref href={`/query${group.urlParams}`}>*/}
-				{/*		<Button*/}
-				{/*			onClick={(e: MouseEvent): void => e.stopPropagation()}*/}
-				{/*			as={'a'}*/}
-				{/*			variant={'light'}*/}
-				{/*			className={'min-w-fit px-5'}>*/}
-				{/*			<span className={'sr-only'}>{'Access details about this strategy'}</span>*/}
-				{/*			{'Details'}*/}
-				{/*		</Button>*/}
-				{/*	</Link>*/}
-				{/*	<div className={'ml-2'}>*/}
-				{/*		<Chevron*/}
-				{/*			className={`h-6 w-6 text-accent-500 transition-transform ${p.open ? '-rotate-90' : '-rotate-180'}`} />*/}
-				{/*	</div>*/}
-				{/*</div>*/}
+				<div className={'min-w-36 cell-end col-span-4 flex flex-row items-center'}>
+					<div className={'ml-2'}>
+						<Chevron
+							className={`h-6 w-6 text-accent-500 transition-transform ${p.open ? '-rotate-90' : '-rotate-180'}`} />
+					</div>
+				</div>
 			</div>
 		);
 	}
 
 	return (
 		<Card.Detail summary={(p: unknown): ReactElement => renderSummary(p as {open: boolean})}>
-			<div></div>
-			{/*<div className={'mt-10'}>*/}
-			{/*	{*/}
-			{/*		group.strategies*/}
-			{/*			.sort((a, b): number => (a.index || 0) - (b.index || 0))*/}
-			{/*			.map((strategy, index: number): ReactElement => (*/}
-			{/*				<StrategyBox*/}
-			{/*					key={index}*/}
-			{/*					strategy={strategy}*/}
-			{/*					symbol={strategy.vault.name}*/}
-			{/*					decimals={strategy.vault.decimals || 18}*/}
-			{/*					vaultAddress={strategy.vault.address}*/}
-			{/*					vaultExplorer={strategy.vault.explorer} />*/}
-			{/*			))*/}
-			{/*	}*/}
-			{/*</div>*/}
+			<div className={'my-10'}>
+				{
+					Object.entries(protocol.strategiesTVL).map(([key, value]): ReactElement => {
+						return (
+							<div className={'mb-10'} key={key}>
+								<div className={'w-10/12 mx-auto flex flex-col'}>
+								<span className={'mb-2 flex flex-row items-center justify-between'}>
+									<p className={'text-left text-neutral-500'}>{`${key}`}</p>
+									<b className={'text-left text-accent-500'}>
+										{`${format.amount(value / protocol.tvl * 100)}%`}
+									</b>
+								</span>
+									<div>
+										<div className={'relative h-2 w-full overflow-hidden rounded-2xl bg-neutral-200 transition-transform'}>
+											<div className={'inset-y-0 left-0 h-full rounded-2xl bg-accent-500'} style={{width: `${value / protocol.tvl * 100}%`}} />
+										</div>
+									</div>
+								</div>
+							</div>
+						);
+					})
+				}
+			</div>
 		</Card.Detail>
 	);
 });
@@ -80,7 +76,6 @@ const	SectionAllocationsList = React.memo(function SectionAllocationsList({sortB
 	const	[sortedProtocols, set_sortedProtocols] = React.useState([] as (any)[]);
 	let _protocols;
 	React.useEffect((): void => {
-		console.log('received', protocols);
 		if(protocols['list']){
 		const protocolList = Object.keys(protocols['list']).map((protocol)=>protocols.list[protocol]);
 		if (['tvl', '-tvl'].includes(sortBy)) {
