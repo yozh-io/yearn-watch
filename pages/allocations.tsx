@@ -43,17 +43,21 @@ function	RowHead({sortBy, set_sortBy}: TRowHead): ReactElement {
 	return (
 		<TableHead sortBy={sortBy} set_sortBy={set_sortBy}>
 			<TableHeadCell
-				className={'cell-start min-w-32 col-span-6'}
+				className={'cell-start min-w-32 col-span-4'}
 				label={'Protocol'}
 				sortId={'name'} />
 			<TableHeadCell
-				className={'cell-end min-w-36 col-span-6'}
+				className={'cell-end min-w-36 col-span-5'}
 				label={'Total Value Locked'}
 				sortId={'tvl'} />
 			<TableHeadCell
-				className={'cell-end min-w-36 col-span-7'}
+				className={'cell-end min-w-36 col-span-5'}
 				label={'Strategies amount'}
 				sortId={'strategiesAmount'} />
+			<TableHeadCell
+				className={'cell-end min-w-36 col-span-6'}
+				label={'Allocated strategies amount'}
+				sortId={'allocatedStrategiesAmount'} />
 		</TableHead>
 	);
 }
@@ -105,12 +109,14 @@ function	Allocations(): ReactElement {
 							protocols[chainData.name]['list'][protocol] = {
 								strategiesTVL: {},
 								tvl: 0,
+								allocatedStrategies: 0,
 								name: protocol,
 							};
 						}
 						protocols[chainData.name]['list'][protocol].tvl += strategy.totalDebtUSDC;
 						if(!protocols[chainData.name]['list'][protocol].strategiesTVL[strategy.name]){
 							protocols[chainData.name]['list'][protocol].strategiesTVL[strategy.name] = 0
+							if(strategy.totalDebtUSDC>0) protocols[chainData.name]['list'][protocol].allocatedStrategies++
 						}
 						protocols[chainData.name]['list'][protocol].strategiesTVL[strategy.name] += strategy.totalDebtUSDC;
 						protocols[chainData.name]['tvlTotal'] += strategy.totalDebtUSDC;
@@ -119,12 +125,14 @@ function	Allocations(): ReactElement {
 							protocols['All']['list'][protocol] = {
 								strategiesTVL: {},
 								tvl: 0,
+								allocatedStrategies: 0,
 								name: protocol,
 							};
 						}
 						protocols['All']['list'][protocol].tvl += strategy.totalDebtUSDC;
 						if(!protocols['All']['list'][protocol].strategiesTVL[strategy.name]){
 							protocols['All']['list'][protocol].strategiesTVL[strategy.name] = 0
+							if(strategy.totalDebtUSDC>0) protocols['All']['list'][protocol].allocatedStrategies++
 						}
 						protocols['All']['list'][protocol].strategiesTVL[strategy.name] += strategy.totalDebtUSDC;
 						protocols['All']['tvlTotal'] += strategy.totalDebtUSDC;
@@ -139,6 +147,11 @@ function	Allocations(): ReactElement {
 			if(protocols[networkName]['list']) {
 				Object.keys(protocols[networkName]['list']).forEach((protocol) => {
 					protocols[networkName]['list'][protocol].strategiesAmount = Object.keys(protocols[networkName]['list'][protocol].strategiesTVL).length
+					// Object.keys(protocols[networkName]['list'][protocol].strategiesTVL).forEach((strategy)=>{
+					// 	if(protocols[networkName]['list'][protocol].strategiesTVL[strategy]>0){
+					// 		protocols[networkName]['list'][protocol].allocatedStrategies++
+					// 	}
+					// })
 					protocols[networkName]['list'][protocol]['totalDebtRatio'] =
 						protocols[networkName]['list'][protocol].tvl /
 						protocols[networkName]['tvlTotal'] * 100
