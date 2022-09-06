@@ -3,9 +3,11 @@ import	{List}						from	'@yearn-finance/web-lib/layouts';
 import	{Card}						from	'@yearn-finance/web-lib/components';
 import	* as utils					from	'@yearn-finance/web-lib/utils';
 import	{Chevron}					from	'@yearn-finance/web-lib/icons';
-import {format} from '@yearn-finance/web-lib/utils';
+import {format} 					from 	'@yearn-finance/web-lib/utils';
+import {TChainData, TProtocolData}  from 	'../../../pages/allocations';
 
-const	ProtocolBox = React.memo(function ProtocolBox({protocol}: {protocol: any}): ReactElement {
+const	ProtocolBox = React.memo(function ProtocolBox({protocol}: {protocol: TProtocolData}): ReactElement {
+
 	function	renderSummary(p: {open: boolean}): ReactElement {
 		return (
 			<div className={`rounded-default relative grid h-20 w-[965px] grid-cols-22 bg-neutral-0 py-4 px-6 transition-colors md:w-full ${p.open ? '' : 'hover:bg-neutral-100'}`}>
@@ -43,8 +45,11 @@ const	ProtocolBox = React.memo(function ProtocolBox({protocol}: {protocol: any})
 			</div>
 		);
 	}
+
 	function	RenderDetail(): ReactElement {
-		const _strategiesList = Object.keys(protocol.strategiesTVL).map((strategy)=>{
+		const _strategiesList = Object.keys(protocol.strategiesTVL).map((strategy): {
+			name: string, tvl: number
+		} => {
 			return {
 				name: strategy,
 				tvl: protocol.strategiesTVL[strategy]
@@ -63,12 +68,12 @@ const	ProtocolBox = React.memo(function ProtocolBox({protocol}: {protocol: any})
 									<span className={'mb-2 flex flex-row items-center justify-between'}>
 										<p className={'text-left text-neutral-500'}>{`${strategy.name}`}</p>
 										<b className={'text-left text-accent-500'}>
-											{`${format.amount(strategy.tvl / protocol.tvl * 100)}%`}
+											{`${format.amount(protocol.tvl ? strategy.tvl / protocol.tvl * 100 : 0)}%`}
 										</b>
 									</span>
 									<div>
 										<div className={'relative h-2 w-full overflow-hidden rounded-2xl bg-neutral-200 transition-transform'}>
-											<div className={'inset-y-0 left-0 h-full rounded-2xl bg-accent-500'} style={{width: `${strategy.tvl / protocol.tvl * 100}%`}} />
+											<div className={'inset-y-0 left-0 h-full rounded-2xl bg-accent-500'} style={{width: `${protocol.tvl ? strategy.tvl / protocol.tvl * 100 : 0}%`}} />
 										</div>
 									</div>
 								</div>
@@ -89,42 +94,41 @@ const	ProtocolBox = React.memo(function ProtocolBox({protocol}: {protocol: any})
 
 type		TSectionAllocationsList = {
 	sortBy: string,
-	protocols: any,
+	protocols: TChainData,
 };
+
 const	SectionAllocationsList = React.memo(function SectionAllocationsList({sortBy, protocols}: TSectionAllocationsList): ReactElement {
-	const	[sortedProtocols, set_sortedProtocols] = React.useState([] as (any)[]);
-	let _protocols;
+	const	[sortedProtocols, set_sortedProtocols] = React.useState([] as TProtocolData[]);
 	React.useEffect((): void => {
 		if(protocols.list){
-			const protocolList = Object.keys(protocols.list).map((protocol)=>protocols.list[protocol]);
+			const protocolList = Object.keys(protocols.list).map((protocol): TProtocolData => protocols.list[protocol]);
 			if (['tvl', '-tvl'].includes(sortBy)) {
-				_protocols = protocolList.sort((a, b): number => {
+				set_sortedProtocols(protocolList.sort((a, b): number => {
 					if (sortBy === '-tvl')
 						return a.tvl - b.tvl;
 					return b.tvl - a.tvl;
-				});
+				}));
 			} else if (['name', '-name'].includes(sortBy)) {
-				_protocols = protocolList.sort((a, b): number => {
+				set_sortedProtocols(protocolList.sort((a, b): number => {
 					const	aName = a.name || '';
 					const	bName = b.name || '';
 					if (sortBy === '-name')
 						return aName.localeCompare(bName);
 					return bName.localeCompare(aName);
-				});
+				}));
 			} else if (['strategiesAmount', '-strategiesAmount', ''].includes(sortBy)) {
-				_protocols = protocolList.sort((a, b): number => {
+				set_sortedProtocols(protocolList.sort((a, b): number => {
 					if (sortBy === '-strategiesAmount')
 						return a.strategiesAmount - b.strategiesAmount;
 					return b.strategiesAmount - a.strategiesAmount;
-				});
+				}));
 			} else if (['allocatedStrategiesAmount', '-allocatedStrategiesAmount', ''].includes(sortBy)) {
-				_protocols = protocolList.sort((a, b): number => {
+				set_sortedProtocols(protocolList.sort((a, b): number => {
 					if (sortBy === '-allocatedStrategiesAmount')
 						return a.allocatedStrategies - b.allocatedStrategies;
 					return b.allocatedStrategies - a.allocatedStrategies;
-				});
+				}));
 			}
-			set_sortedProtocols(_protocols);
 		}
 	}, [protocols, sortBy]);
 
